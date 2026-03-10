@@ -12,6 +12,76 @@ library('cowplot') # for plot grid
 library('ggpubr') # for adding p values
 
 #############################################################
+### Urea toxicity tests
+
+#### Average mortalities
+mort <- read.csv(file.choose(), header=TRUE)
+
+### organize treatments
+mort2 <- mort %>%
+  mutate(across(Treatment, factor, levels=c("CTR", "1", "3", "10", "30",
+                                            "100", "300")))
+### Means and SD already calculated
+## Plot
+mort.p <- ggplot(mort2)+
+  geom_bar(aes(x=Treatment, y=Mortality), stat="Identity", fill="orange")+
+  geom_errorbar(aes(x=Treatment, ymin=Mortality-SD, ymax=Mortality+SD), width=0.25)+
+  coord_cartesian(ylim=c(0,100))+
+  labs(y="Average mortality (%)", x= expression(Urea~treatment~(mg~L^-1)))+
+  scale_y_continuous(breaks=c(0,20,40,60,80,100))+
+  theme_bw()
+mort.p
+
+##### now read fish embryo length and mass data
+emb <- read.csv(file.choose(), header=TRUE)
+
+### select summarize length data
+len2 <- emb %>%
+  select(Treatment, Length) %>%
+  group_by(Treatment) %>%
+  summarize(
+    mean = mean(Length, na.rm = TRUE),
+    sd = sd(Length, na.rm = TRUE)
+  ) %>%
+  mutate(across(Treatment, factor, levels=c("CTR", "1", "3", "10", "30",
+                                            "100", "300")))
+  
+
+len.p <- ggplot(len2)+
+  geom_bar(aes(x=Treatment, y=mean), stat="Identity", fill="orange")+
+  geom_errorbar(aes(x=Treatment, ymin=mean-sd, ymax=mean+sd), width=0.25)+
+  geom_jitter(data=emb, aes(x=Treatment, y=Length), size=1.25, alpha=0.5)+
+  labs(y="Average length (mm)", x= expression(Urea~treatment~(mg~L^-1)))+
+  theme_bw()
+len.p
+
+### now the same with weight
+wgt2 <- emb %>%
+  select(Treatment, Weight) %>%
+  group_by(Treatment) %>%
+  summarize(
+    mean = mean(Weight, na.rm = TRUE),
+    sd = sd(Weight, na.rm = TRUE)
+  ) %>%
+  mutate(across(Treatment, factor, levels=c("CTR", "1", "3", "10", "30",
+                                            "100", "300")))
+
+wgt.p <- ggplot(wgt2)+
+  geom_bar(aes(x=Treatment, y=mean), stat="Identity", fill="orange")+
+  geom_errorbar(aes(x=Treatment, ymin=mean-sd, ymax=mean+sd), width=0.25)+
+  geom_jitter(data=emb, aes(x=Treatment, y=Weight), size=1.25, alpha=0.5)+
+  labs(y="Average weight (g)", x= expression(Urea~treatment~(mg~L^-1)))+
+  theme_bw()
+wgt.p
+
+### combine plots
+emb.p <-
+  plot_grid(align="v", mort.p, len.p, wgt.p,
+          ncol=1, labels= c("a)", "b)", "c)"))
+
+emb.p
+ggsave("urea-toxicity.pdf", emb.p, dpi=300, scale=1)
+
 ### Waterchem, pigments, toxins data
 dgs <- read.csv(file.choose(), header = TRUE)
 
